@@ -21,6 +21,11 @@ Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRBW + NEO_KHZ800);
 // Crea oggetto display
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+// Modifica la definizione di INITIAL_LUX da costante a variabile globale
+// #define INITIAL_LUX 850.0  // Luminosità iniziale senza PLA (da calibrare)
+float INITIAL_LUX = 0.0;  // Sarà inizializzata nel setup
+#define PLA_EXTINCTION_COEFF 0.5
+
 /* void setup() {
   Serial.begin(9600);
   
@@ -69,7 +74,7 @@ void loop() {
   
   delay(5000);
 } */
- 
+
 // Crea un'istanza del sensore di luminosità
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 
@@ -185,6 +190,31 @@ void setup() {
   // Configura il sensore TSL2561
   tsl.enableAutoRange(true);
   tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);
+  
+  // Dopo l'inizializzazione del sensore TSL2561
+  delay(1000); // Attendi che il sensore si stabilizzi
+  
+  // Leggi il valore iniziale di luminosità (media di 10 letture)
+  float sum_lux = 0.0;
+  for(int i = 0; i < 10; i++) {
+    sensors_event_t event;
+    tsl.getEvent(&event);
+    sum_lux += event.light;
+    delay(100);
+  }
+  INITIAL_LUX = sum_lux / 10.0;
+  
+  Serial.print("Luminosità iniziale calibrata: ");
+  Serial.print(INITIAL_LUX);
+  Serial.println(" lux");
+  
+  // Mostra il valore calibrato sul display
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.print("Lux cal: ");
+  display.print(INITIAL_LUX, 1);
+  display.display();
+  delay(2000);
 }
 
 void loop() {
@@ -215,10 +245,21 @@ void loop() {
   sensors_event_t event;
   tsl.getEvent(&event);
   
-  // Stampa la luminosità su Serial
+  // Calcola la transmission distance usando la legge di Beer-Lambert
+  float transmission_ratio = event.light / INITIAL_LUX;
+  float transmission_distance = 0.0;
+  
+  if (transmission_ratio > 0) {
+    transmission_distance = -log(transmission_ratio) / PLA_EXTINCTION_COEFF;
+  }
+  
+  // Stampa i risultati
   Serial.print("Luminosità: ");
   Serial.print(event.light);
   Serial.println(" lux");
+  Serial.print("Distanza PLA stimata: ");
+  Serial.print(transmission_distance);
+  Serial.println(" mm");
   
   // Aggiorna il display con il colore e la luminosità
   display.clearDisplay();
@@ -235,7 +276,13 @@ void loop() {
   display.setCursor(0,16);
   display.print("Lux: ");
   display.print(event.light);
+  
+  // Aggiungi la distanza PLA nella terza riga
+  display.setCursor(0,24);
+  display.print("PLA: ");
+  display.print(transmission_distance, 1);
+  display.print("mm");
   display.display();
   
-  delay(5000); // Modificato a 5 secondi
+  delay(5000);
 }
