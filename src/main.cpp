@@ -20,55 +20,6 @@ Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRBW + NEO_KHZ800);
 
 // Crea oggetto display
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-/* void setup() {
-  Serial.begin(9600);
-  
-  if (!tcs.begin()) {
-    Serial.println("Errore: sensore non trovato!");
-    while (1);
-  }
-  Serial.println("Sensore TCS34725 trovato!");
-}
-
-void loop() {
-  uint16_t r, g, b, c;
-  
-  // Leggi i valori RGB e Clear
-  tcs.getRawData(&r, &g, &b, &c);
-
-  // Stampa prima i valori RAW per debug
-  Serial.print("Valori RAW -> R: "); Serial.print(r);
-  Serial.print(" G: "); Serial.print(g);
-  Serial.print(" B: "); Serial.print(b);
-  Serial.print(" C: "); Serial.println(c);
-
-  // Converti in valori RGB 0-255 con un fattore di scala diverso
-  float r_norm = (float)r / c * 255.0;
-  float g_norm = (float)g / c * 255.0;
-  float b_norm = (float)b / c * 255.0;
-
-  // Stampa i valori normalizzati
-  Serial.print("Normalizzati (0-255) -> R: "); Serial.print(r_norm);
-  Serial.print(" G: "); Serial.print(g_norm);
-  Serial.print(" B: "); Serial.println(b_norm);
-
-   // Converti in valori interi per hex
-  byte r_hex = (byte)r_norm;
-  byte g_hex = (byte)g_norm;
-  byte b_hex = (byte)b_norm;
-
-  // Stampa i valori normalizzati in decimale e hex
-  Serial.print("Colore HEX: #");
-  if(r_hex < 16) Serial.print("0"); // Aggiunge lo zero iniziale se necessario
-  Serial.print(r_hex, HEX);
-  if(g_hex < 16) Serial.print("0");
-  Serial.print(g_hex, HEX);
-  if(b_hex < 16) Serial.print("0");
-  Serial.println(b_hex, HEX);
-  
-  delay(5000);
-} */
  
 // Crea un'istanza del sensore di luminosità
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
@@ -106,38 +57,6 @@ CalibrationValues getAverageReading(int num_readings = 10) {
   avg.c = sum_c / num_readings;
   return avg;
 }
-
-/* Commento la funzione di calibrazione poiché ora usiamo valori fissi
-void calibrate() {
-  Serial.println("\n=== Inizia Calibrazione ===");
-  
-  // Calibrazione del nero
-  Serial.println("Posiziona il sensore su una superficie NERA");
-  Serial.println("Inizio tra 5 secondi...");
-  delay(15000);
-  
-  black_cal = getAverageReading();
-  Serial.println("Calibrazione nero completata!");
-  Serial.print("Nero - R: "); Serial.print(black_cal.r);
-  Serial.print(" G: "); Serial.print(black_cal.g);
-  Serial.print(" B: "); Serial.print(black_cal.b);
-  Serial.print(" C: "); Serial.println(black_cal.c);
-  
-  // Calibrazione del bianco
-  Serial.println("\nPosiziona il sensore su una superficie BIANCA");
-  Serial.println("Inizio tra 5 secondi...");
-  delay(15000);
-  
-  white_cal = getAverageReading();
-  Serial.println("Calibrazione bianco completata!");
-  Serial.print("Bianco - R: "); Serial.print(white_cal.r);
-  Serial.print(" G: "); Serial.print(white_cal.g);
-  Serial.print(" B: "); Serial.print(white_cal.b);
-  Serial.print(" C: "); Serial.println(white_cal.c);
-  
-  Serial.println("\n=== Calibrazione Completata ===");
-}
-*/
 
 // Funzione per normalizzare un valore tra il nero e il bianco
 byte normalizeValue(uint16_t value, uint16_t black, uint16_t white) {
