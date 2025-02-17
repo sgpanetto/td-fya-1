@@ -11,6 +11,7 @@
 #define SCREEN_WIDTH 128    // Larghezza display OLED in pixel
 #define SCREEN_HEIGHT 32    // Altezza display OLED in pixel
 #define OLED_RESET -1      // Pin reset (-1 se condivide il reset dell'Arduino)
+#define BUTTON_PIN 2    // Pin del pulsante
 
 // Crea un'istanza del sensore
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
@@ -136,67 +137,71 @@ void setup() {
   Serial.print("Luminosità iniziale calibrata: ");
   Serial.print(initial_lux);
   Serial.println(" lux");
+  
+  // Aggiungi questa configurazione del pin del pulsante
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.print("Ready");
+  display.display();
 }
 
 void loop() {
-  uint16_t r, g, b, c;
-  tcs.getRawData(&r, &g, &b, &c);
+  // Sostituisci tutto il contenuto del loop con questo nuovo codice
+  if (digitalRead(BUTTON_PIN) == LOW) {  // Il pulsante è stato premuto
+    uint16_t r, g, b, c;
+    tcs.getRawData(&r, &g, &b, &c);
 
-  // Normalizza i valori usando i punti di calibrazione
-  byte r_norm = normalizeValue(r, black_cal.r, white_cal.r);
-  byte g_norm = normalizeValue(g, black_cal.g, white_cal.g);
-  byte b_norm = normalizeValue(b, black_cal.b, white_cal.b);
+    // Normalizza i valori usando i punti di calibrazione
+    byte r_norm = normalizeValue(r, black_cal.r, white_cal.r);
+    byte g_norm = normalizeValue(g, black_cal.g, white_cal.g);
+    byte b_norm = normalizeValue(b, black_cal.b, white_cal.b);
 
-  // Stampa i valori normalizzati in hex
-  Serial.print("Colore calibrato HEX: #");
-  if(r_norm < 16) Serial.print("0");
-  Serial.print(r_norm, HEX);
-  if(g_norm < 16) Serial.print("0");
-  Serial.print(g_norm, HEX);
-  if(b_norm < 16) Serial.print("0");
-  Serial.println(b_norm, HEX);
-
-  // Stampa anche i valori raw per debug
-  Serial.print("RAW - R: "); Serial.print(r);
-  Serial.print(" G: "); Serial.print(g);
-  Serial.print(" B: "); Serial.print(b);
-  Serial.print(" C: "); Serial.println(c);
-  
-  // Leggi la luminosità
-  sensors_event_t event;
-  tsl.getEvent(&event);
-  
-  // Calcola la Transmission Distance
-  float transmission_ratio = event.light / initial_lux;
-  float ln_lux = log(transmission_ratio);
-  float td = -(1.75/ln_lux)*10;
-  
-  // Stampa la luminosità su Serial
-  Serial.print("Luminosità: ");
-  Serial.print(event.light);
-  Serial.println(" lux");
-  
-  // Aggiorna il display con TD invece della luminosità
-  display.clearDisplay();
-  display.setCursor(0,0);
-  display.print("Color: #");
-  if(r_norm < 16) display.print("0");
-  display.print(r_norm, HEX);
-  if(g_norm < 16) display.print("0");
-  display.print(g_norm, HEX);
-  if(b_norm < 16) display.print("0");
-  display.print(b_norm, HEX);
-  
-  display.setCursor(0,16);
-  display.print("TD: ");
-  display.print(td, 1);
-  display.print("mm");
-  display.display();
-  
-  // Stampa anche su Serial
-  Serial.print("Transmission Distance: ");
-  Serial.print(td, 1);
-  Serial.println("mm");
-  
-  delay(5000);
+    // Leggi la luminosità
+    sensors_event_t event;
+    tsl.getEvent(&event);
+    
+    // Calcola la Transmission Distance
+    float transmission_ratio = event.light / initial_lux;
+    float ln_lux = log(transmission_ratio);
+    float td = -(1.75/ln_lux)*10;
+    
+    // Aggiorna il display
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.print("Color: #");
+    if(r_norm < 16) display.print("0");
+    display.print(r_norm, HEX);
+    if(g_norm < 16) display.print("0");
+    display.print(g_norm, HEX);
+    if(b_norm < 16) display.print("0");
+    display.print(b_norm, HEX);
+    
+    display.setCursor(0,16);
+    display.print("TD: ");
+    display.print(td, 1);
+    display.print("mm");
+    display.display();
+    
+    // Output seriale
+    Serial.print("Colore calibrato HEX: #");
+    if(r_norm < 16) Serial.print("0");
+    Serial.print(r_norm, HEX);
+    if(g_norm < 16) Serial.print("0");
+    Serial.print(g_norm, HEX);
+    if(b_norm < 16) Serial.print("0");
+    Serial.println(b_norm, HEX);
+    
+    Serial.print("Transmission Distance: ");
+    Serial.print(td, 1);
+    Serial.println("mm");
+  } else {
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.print("Ready");
+    display.display();
+  }
+    
+  delay(1000);  // Piccolo ritardo per evitare letture multiple
 }
