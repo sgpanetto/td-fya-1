@@ -22,9 +22,10 @@ Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRBW + NEO_KHZ800);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // Modifica la definizione di INITIAL_LUX da costante a variabile globale
-// #define INITIAL_LUX 850.0  // Luminosità iniziale senza PLA (da calibrare)
+//#define INITIAL_LUX 850.0  // Luminosità iniziale senza PLA (da calibrare)
 float INITIAL_LUX = 0.0;  // Sarà inizializzata nel setup
-#define PLA_EXTINCTION_COEFF 0.5
+//#define PLA_EXTINCTION_COEFF 0.5
+#define PLA_EXTINCTION_COEFF 6.986111111111
 
 /* void setup() {
   Serial.begin(9600);
@@ -188,8 +189,12 @@ void setup() {
   }
   
   // Configura il sensore TSL2561
-  tsl.enableAutoRange(true);
-  tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);
+  //tsl.enableAutoRange(true);
+  //tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);
+  // Modifica la configurazione del sensore TSL2561
+  tsl.enableAutoRange(false);  // Disabilita l'auto-range per un maggior controllo
+  tsl.setGain(TSL2561_GAIN_16X);  // Imposta il gain a 16x per maggiore sensibilità
+  tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  // Tempo di integrazione più lungo per maggiore precisione
   
   // Dopo l'inizializzazione del sensore TSL2561
   delay(1000); // Attendi che il sensore si stabilizzi
@@ -202,7 +207,7 @@ void setup() {
     sum_lux += event.light;
     delay(100);
   }
-  INITIAL_LUX = sum_lux / 10.0;
+  INITIAL_LUX = sum_lux / 10.0; 
   
   Serial.print("Luminosità iniziale calibrata: ");
   Serial.print(INITIAL_LUX);
@@ -250,7 +255,11 @@ void loop() {
   float transmission_distance = 0.0;
   
   if (transmission_ratio > 0) {
+    Serial.print("Transmission ratio: ");
+    //Serial.println(transmission_ratio);    
+    Serial.println(-log(transmission_ratio));
     transmission_distance = -log(transmission_ratio) / PLA_EXTINCTION_COEFF;
+    transmission_distance = transmission_distance*10;
   }
   
   // Stampa i risultati
@@ -279,9 +288,9 @@ void loop() {
   
   // Aggiungi la distanza PLA nella terza riga
   display.setCursor(0,24);
-  display.print("PLA: ");
+  display.print("TD: ");
   display.print(transmission_distance, 1);
-  display.print("mm");
+  //display.print("mm");
   display.display();
   
   delay(5000);
