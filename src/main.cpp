@@ -36,6 +36,9 @@ struct CalibrationValues {
 CalibrationValues white_cal = {4633, 6182, 4215, 15337};  // Valori del bianco
 CalibrationValues black_cal = {405, 646, 419, 1500};      // Valori del nero
 
+// Aggiungi queste variabili globali
+float initial_lux = 0;  // Luminosità iniziale senza filamento
+
 // Funzione per leggere più valori e farne la media
 CalibrationValues getAverageReading(int num_readings = 10) {
   CalibrationValues avg = {0, 0, 0, 0};
@@ -69,7 +72,7 @@ byte normalizeValue(uint16_t value, uint16_t black, uint16_t white) {
 
 void setup() {
   Serial.begin(9600);
-  
+
   // Inizializza il display OLED
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -78,6 +81,11 @@ void setup() {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
+  display.display();
+  
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.print("Starting...");
   display.display();
   
   pixels.begin();
@@ -104,6 +112,30 @@ void setup() {
   // Configura il sensore TSL2561
   tsl.enableAutoRange(true);
   tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);
+  
+  // Aggiungi questa parte alla fine del setup
+  Serial.println("Calibrazione luminosità iniziale...");
+  delay(2000);  // Attendi che tutto si stabilizzi
+
+  for(int i = 0; i < 10; i++) {
+    sensors_event_t event;
+    tsl.getEvent(&event);    
+    delay(100);
+  }
+  
+  // Leggi la luminosità iniziale (media di 10 letture)
+  float sum_lux = 0;
+  for(int i = 0; i < 10; i++) {
+    sensors_event_t event;
+    tsl.getEvent(&event);
+    sum_lux += event.light;
+    delay(100);
+  }
+  initial_lux = sum_lux / 10;
+  
+  Serial.print("Luminosità iniziale calibrata: ");
+  Serial.print(initial_lux);
+  Serial.println(" lux");
 }
 
 void loop() {
@@ -134,12 +166,17 @@ void loop() {
   sensors_event_t event;
   tsl.getEvent(&event);
   
+  // Calcola la Transmission Distance
+  float transmission_ratio = event.light / initial_lux;
+  float ln_lux = log(transmission_ratio);
+  float td = -(1.75/ln_lux)*10;
+  
   // Stampa la luminosità su Serial
   Serial.print("Luminosità: ");
   Serial.print(event.light);
   Serial.println(" lux");
   
-  // Aggiorna il display con il colore e la luminosità
+  // Aggiorna il display con TD invece della luminosità
   display.clearDisplay();
   display.setCursor(0,0);
   display.print("Color: #");
@@ -150,11 +187,16 @@ void loop() {
   if(b_norm < 16) display.print("0");
   display.print(b_norm, HEX);
   
-  // Aggiungi la luminosità nella seconda riga
   display.setCursor(0,16);
-  display.print("Lux: ");
-  display.print(event.light);
+  display.print("TD: ");
+  display.print(td, 1);
+  display.print("mm");
   display.display();
   
-  delay(5000); // Modificato a 5 secondi
+  // Stampa anche su Serial
+  Serial.print("Transmission Distance: ");
+  Serial.print(td, 1);
+  Serial.println("mm");
+  
+  delay(5000);
 }
