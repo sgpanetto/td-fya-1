@@ -6,12 +6,12 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_TSL2561_U.h>
 
-#define LED_PIN 6     // Pin di controllo del NeoPixel
+#define LED_PIN 14     // Pin di controllo del NeoPixel
 #define NUM_LEDS 2    // Numero di LED nella striscia
 #define SCREEN_WIDTH 128    // Larghezza display OLED in pixel
 #define SCREEN_HEIGHT 32    // Altezza display OLED in pixel
 #define OLED_RESET -1      // Pin reset (-1 se condivide il reset dell'Arduino)
-#define BUTTON_PIN 2    // Pin del pulsante
+#define BUTTON_PIN 15    // Pin del pulsante
 
 // Crea un'istanza del sensore
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
@@ -72,8 +72,10 @@ byte normalizeValue(uint16_t value, uint16_t black, uint16_t white) {
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
+  // Modifica la configurazione I2C per RP2040
+  Wire.begin();
   // Inizializza il display OLED
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println(F("SSD1306 allocation failed"));
